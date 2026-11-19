@@ -29,6 +29,7 @@ static double pi_par(long long N, int num_threads, double &tempo_par) {
     long long pontos_no_circulo = 0;
 
     // reduction(+:pontos_no_circulo) cria contadores privados por thread e evita race condition
+    // Otimizacao: escalonamento estatico padrao com carga balanceada e gerador mt19937 por thread    
     #pragma omp parallel num_threads(num_threads) reduction(+:pontos_no_circulo)
     {
         int tid = omp_get_thread_num();
