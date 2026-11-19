@@ -21,6 +21,8 @@ base: $(BASE_DIR)/baseline_pi
 openmp: $(OMP_DIR)/02_pi_openmp
 mpi: $(MPI_DIR)/03_coletivas_pi
 
+benchmarks: $(OMP_DIR)/benchmark_escalonamento $(MPI_DIR)/comparativo_coletiva_vs_p2p
+
 $(BASE_DIR)/baseline_pi: $(BASE_DIR)/baseline_pi.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
 
@@ -30,7 +32,13 @@ $(OMP_DIR)/02_pi_openmp: $(OMP_DIR)/02_pi_openmp.cpp
 $(MPI_DIR)/03_coletivas_pi: $(MPI_DIR)/03_coletivas_pi.cpp
 	$(MPICXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
 
-clean:
-	rm -f $(BASE_DIR)/baseline_pi $(OMP_DIR)/02_pi_openmp $(MPI_DIR)/03_coletivas_pi
+$(OMP_DIR)/benchmark_escalonamento: $(OMP_DIR)/benchmark_escalonamento.cpp
+	$(CXX) $(CXXFLAGS) $(OMPFLAG) -o $@ $< $(LDLIBS)
 
-.PHONY: all base openmp mpi clean
+$(MPI_DIR)/comparativo_coletiva_vs_p2p: $(MPI_DIR)/comparativo_coletiva_vs_p2p.cpp
+	$(MPICXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
+
+clean:
+	rm -f $(BASE_DIR)/baseline_pi $(OMP_DIR)/02_pi_openmp $(MPI_DIR)/03_coletivas_pi $(OMP_DIR)/benchmark_escalonamento $(MPI_DIR)/comparativo_coletiva_vs_p2p
+
+.PHONY: all base openmp mpi benchmarks clean
