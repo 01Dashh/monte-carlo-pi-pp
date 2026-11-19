@@ -1,75 +1,63 @@
-# Projeto: Estimativa de $\pi$ por Monte Carlo em Paralelo
+# Estimativa de Pi por Monte Carlo (Paralelismo em CPU)
 
-**Disciplina:** Programação Paralela (CCO085) — IESB 2026/2  
-**Professor:** Rodrigo Gonçalves Pinto  
-**Problema 2:** Estimativa de $\pi$ por Monte Carlo (Paralelismo quase perfeito)
+Projeto da disciplina de Programacao Paralela (CCO085) - IESB 2026/2.
+Problema 2: Estimativa de Pi via metodo de Monte Carlo.
 
----
+## Integrantes e Frentes
 
-## 👥 Integrantes e Frentes
+- Lucas Goncalves Rocha: Baseline sequencial e perfilamento
+- Lucas Faria Ribeiro: Paralelizacao em memoria compartilhada (OpenMP)
+- Joao Lucas Gomes da Silva: Paralelizacao em memoria distribuida (MPI)
 
-- **Lucas Gonçalves Rocha** — Baseline e Perfilamento
-- **Lucas Faria Ribeiro** — OpenMP (Memória Compartilhada)
-- **João Lucas Gomes Da Silva** — MPI (Memória Distribuída)
+## Estrutura do Repositorio
 
----
+- `codigos/00_base/baseline_pi.cpp`: Codigo sequencial de referencia.
+- `codigos/01_openmp/02_pi_openmp.cpp`: Versao paralela com OpenMP e reduction.
+- `codigos/02_mpi/03_coletivas_pi.cpp`: Versao distribuida com MPI e MPI_Reduce.
+- `scripts/medir_openmp.sh`: Script de medicao automatizada para OpenMP.
+- `scripts/medir_mpi.sh`: Script de medicao automatizada para MPI.
+- `resultados/medicoes_experimento.csv`: Dados brutos coletados nos testes.
+- `Makefile`: Script de compilacao de todos os binarios.
+- `AUTORES.md`: Declaracao formal de responsabilidades do trio.
 
-## 📁 Estrutura do Repositório
+## Compilacao
 
-```text
-├── codigos/
-│   ├── 00_base/
-│   │   └── baseline_pi.cpp        # Algoritmo sequencial de referência
-│   ├── 01_openmp/
-│   │   └── 02_pi_openmp.cpp       # Paralelização OpenMP com reduction
-│   └── 02_mpi/
-│       └── 03_coletivas_pi.cpp    # Paralelização MPI com MPI_Reduce
-├── scripts/
-│   └── medir_speedup.sh           # Script de coleta automatizada
-├── resultados/                    # Arquivos CSV e gráficos gerados
-├── AUTORES.md                     # Atribuição formal de responsabilidades
-├── Makefile                       # Regras de compilação automatizada
-└── README.md                      # Instruções de execução e replicação
-```
+Dentro do ambiente Linux (container Docker ou terminal com g++, OpenMP e OpenMPI):
 
----
-
-## 🚀 Como Compilar e Rodar do Zero
-
-Dentro do contêiner Docker/Dev Container da disciplina:
-
-### 1. Compilação
 ```bash
 make clean
 make
 ```
-O comando compila todas as três versões com otimização `-O3`.
 
-### 2. Execuções de Demonstração (N = 50.000.000)
+O comando compila todas as versoes com otimizacao `-O3` e gera os executaveis correspondentes em cada subdiretorio de `codigos/`.
 
-#### Passo 1 — Baseline Sequencial (Lucas G.)
+## Execucao dos Testes (N = 50.000.000)
+
+### 1. Baseline Sequencial
 ```bash
 ./codigos/00_base/baseline_pi 50000000
 ```
 
-#### Passo 2 — OpenMP (Lucas F.)
+### 2. Versao OpenMP (4 threads)
 ```bash
 ./codigos/01_openmp/02_pi_openmp 50000000 4
 ```
+Tambem pode ser executado definindo a variavel de ambiente:
+```bash
+OMP_NUM_THREADS=4 ./codigos/01_openmp/02_pi_openmp 50000000
+```
 
-#### Passo 3 — MPI (João Lucas)
+### 3. Versao MPI (4 processos)
 ```bash
 mpirun -np 4 ./codigos/02_mpi/03_coletivas_pi 50000000
 ```
 
----
+## Resultados Medidos em Laboratorio (N = 50.000.000)
 
-## 🔬 Metodologia e Decisões Técnicas
+| Versao | Unidades | Tempo (s) | Speedup | Eficiencia |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline | 1 nucleo | 0.427 s | 1.00x | 100.0% |
+| OpenMP | 4 threads | 0.126 s | 3.49x | 87.2% |
+| MPI | 4 processos | 0.196 s | 2.18x | 54.5% |
 
-1. **Hotspot e Amdahl:**
-   - O laço de sorteio de coordenadas $(x, y)$ e teste $x^2 + y^2 \le 1$ representa mais de 99,8% do tempo de execução sequencial ($O(N)$), permitindo alto teto teórico de speedup.
-2. **Independência do PRNG:**
-   - Para evitar contenção de cache e garantir validade estatística, cada thread (no OpenMP) e cada processo (no MPI) possui sua própria instância de `std::mt19937` inicializada com sementes exclusivas (`seed + id`).
-3. **Redução sem Race Condition:**
-   - No OpenMP, a cláusula `reduction(+:pontos_no_circulo)` aloca contadores em registradores/pilha privada por thread, eliminando condição de corrida e evitando *false sharing*.
-   - No MPI, a agregação global é realizada ao final via `MPI_Reduce` para o rank 0, com overhead de comunicação mínimo de complexidade $O(\log P)$.
+Observacao sobre os resultados: o OpenMP apresentou maior speedup que o MPI em um unico no devido ao menor overhead de criacao e sincronizacao de threads leves em memoria compartilhada em relacao a criacao de multiplos processos de sistema operacional via mpirun.

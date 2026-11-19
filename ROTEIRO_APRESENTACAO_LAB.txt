@@ -1,0 +1,104 @@
+ROTEIRO DE DEMONSTRACAO AO VIVO NO LABORATORIO - CCO085
+Projeto: Estimativa de Pi por Monte Carlo (Problema 2)
+Integrantes: Lucas G. Rocha, Lucas Faria Ribeiro, Joao Lucas G. da Silva
+
+================================================================================
+FASE 0: PREPARACAO NO COMPUTADOR ANTES DE CHAMAR O PROFESSOR
+================================================================================
+1. Abra o terminal integrado do VS Code (ou terminal Linux / Dev Container).
+2. Verifique o numero de nucleos da maquina:
+   nproc
+   (Certifique-se de que retorna pelo menos 4 nucleos).
+3. Compile todos os programas do zero:
+   make clean
+   make
+4. Limpe a tela do terminal para a apresentacao comecar impecavel:
+   clear
+5. Ajuste o zoom do terminal (Ctrl + +) para ficar bem legivel para o professor.
+
+================================================================================
+FASE 1: DEMONSTRACAO AO VIVO (~9 MINUTOS - REVEZAMENTO NO TECLADO)
+================================================================================
+
+[PASSO 1 - LUCAS G. NO TECLADO: INTRODUCAO E BASELINE]
+Fala:
+"Boa noite professor. Nosso grupo escolheu o Problema 2: Estimativa de Pi por
+Monte Carlo. A logica consiste em sortear pontos aleatorios dentro de um quadrado
+unitario e verificar quantos caem no quarto de circulo atraves da equacao
+x^2 + y^2 <= 1. Trata-se de um problema embaracosamente paralelo com complexidade
+O(N) e alto potencial de escalabilidade. Vou compilar e rodar a versao baseline."
+
+Comandos digitados ao vivo:
+make
+./codigos/00_base/baseline_pi 50000000
+
+O que mostrar na tela para o professor:
+- Pi estimado em 3.141479.
+- Tempo de execucao de ~0.427 segundos.
+- Explicar que esse laco iterativo consome mais de 99% do tempo, sendo o hotspot
+  do algoritmo e o alvo da paralelizacao segundo a Lei de Amdahl.
+
+--------------------------------------------------------------------------------
+(Lucas G. levanta e da o lugar para o Lucas F.)
+--------------------------------------------------------------------------------
+
+[PASSO 2 - LUCAS F. NO TECLADO: OPENMP (MEMORIA COMPARTILHADA)]
+Fala:
+"Na versao em memoria compartilhada com OpenMP, o desafio foi paralelizar o laco
+evitando condicao de corrida na variavel de acertos. Em vez de usar critical ou
+atomic, que criariam travas e destruiriam o desempenho, utilizamos a diretiva
+parallel for com a clausula reduction(+:pontos_no_circulo). Ela aloca contadores
+privados por thread e faz uma unica soma final, eliminando false sharing. Alem
+disso, cada thread possui seu proprio gerador std::mt19937 com semente exclusiva.
+Vou executar agora com 4 threads."
+
+Comando digitado ao vivo:
+./codigos/01_openmp/02_pi_openmp 50000000 4
+
+O que mostrar na tela para o professor:
+- Pi mantido correto em 3.141666.
+- Tempo paralelo de ~0.126 segundos.
+- Speedup impresso na tela de 3.49x e eficiencia de 87.17%.
+
+--------------------------------------------------------------------------------
+(Lucas F. levanta e da o lugar para o Joao Lucas)
+--------------------------------------------------------------------------------
+
+[PASSO 3 - JOAO LUCAS NO TECLADO: MPI (MEMORIA DISTRIBUIDA)]
+Fala:
+"Para a versao de memoria distribuida com MPI, aplicamos decomposicao de dominio
+dividindo a carga total homogeneamente: cada rank calcula sua cota N/P de pontos.
+Cada processo possui memoria isolada e seu proprio gerador aleatorio. Ao final do
+calculo local, usamos a operacao coletiva MPI_Reduce com o operador MPI_SUM para
+consolidar a contagem de todos os processos no rank 0 em arvore binaria O(log P).
+Vou executar agora com 4 processos."
+
+Comando digitado ao vivo:
+mpirun -np 4 ./codigos/02_mpi/03_coletivas_pi 50000000
+
+O que mostrar na tela para o professor:
+- Pi convergindo exatamente no mesmo valor: 3.141666.
+- Tempo decorrido de ~0.196 segundos para os 4 processos.
+
+--------------------------------------------------------------------------------
+
+[PASSO 4 - DISCUSSAO DOS RESULTADOS E CONCLUSAO (TODOS)]
+Fala compartilhada apontando o slide do grafico:
+- "O speedup medido foi de 3.49x no OpenMP e 2.18x no MPI."
+- "Por que o OpenMP superou o MPI nesta maquina? Porque em um unico no multicore,
+  o OpenMP cria threads leves com memoria compartilhada e custo de sincronizacao
+  minimo. Ja o MPI instancia 4 processos completos de sistema operacional com
+  overhead de MPI_Init e comunicacao inter-processos."
+- "A Lei de Amdahl explica o limite: temos uma fracao serial residual de ~4.9%
+  no OpenMP, composta por inicializacao e impressao."
+
+================================================================================
+FASE 2: ARGUICAO CRUZADA (~9 MINUTOS) - LEMBRETES RAPIDOS
+================================================================================
+- Lucas G. (perguntado sobre OpenMP/MPI):
+  Defenda o reduction (sem locks) e o MPI_Reduce (coletiva em arvore O(log P)).
+- Lucas F. (perguntado sobre Baseline/MPI):
+  Defenda o hotspot O(N) e a decomposicao N/P no MPI.
+- Joao Lucas (perguntado sobre Baseline/OpenMP):
+  Defenda por que nao usamos rand() global (evitar race condition e locks) e o
+  que e false sharing (evitado com registradores privados no reduction).
