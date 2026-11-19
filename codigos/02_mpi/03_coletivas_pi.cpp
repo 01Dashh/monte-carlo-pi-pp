@@ -25,6 +25,8 @@ int main(int argc, char* argv[]) {
         N_local += N % size; // Último rank absorve o resto da divisão
     }
 
+    // Sincronizacao de barreira para isolar o tempo estrito de amostragem e comunicacao
+
     MPI_Barrier(MPI_COMM_WORLD);
     double start_time = MPI_Wtime();
 
