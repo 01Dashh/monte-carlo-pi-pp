@@ -1,0 +1,4 @@
+versao,unidades,tempo_s,speedup,eficiencia_pct
+Baseline (Sequencial),1,0.426917,1.00,100.00
+OpenMP,4,0.126131,3.49,87.17
+MPI,4,0.196356,2.18,54.50
