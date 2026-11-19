@@ -1,43 +1,36 @@
 # Programação Paralela (CCO085) — IESB 2026/2
-# Uso: make            -> compila tudo
-#      make openmp     -> só os exemplos OpenMP
-#      make mpi        -> só os exemplos MPI
-#      make clean      -> remove os binários
+# Projeto Acadêmico: Estimativa de Pi por Monte Carlo
+# Integrantes:
+#   Lucas G. Rocha       - Baseline e Perfilamento
+#   Lucas F. Ribeiro     - OpenMP (Memória Compartilhada)
+#   João Lucas G. Silva  - MPI (Memória Distribuída)
 
-CC      = gcc
-MPICC   = mpicc
-CFLAGS  = -O2 -Wall
-OMPFLAG = -fopenmp
-LDLIBS  = -lm
+CXX      = g++
+MPICXX   = mpicxx
+CXXFLAGS = -O3 -Wall
+OMPFLAG  = -fopenmp
+LDLIBS   = -lm
 
-BASE   = codigos/00_base
-OMPDIR = codigos/01_openmp
-MPIDIR = codigos/02_mpi
+BASE_DIR = codigos/00_base
+OMP_DIR  = codigos/01_openmp
+MPI_DIR  = codigos/02_mpi
 
-BASE_SRC = $(wildcard $(BASE)/*.c)
-OMP_SRC  = $(wildcard $(OMPDIR)/*.c)
-MPI_SRC  = $(wildcard $(MPIDIR)/*.c)
+all: $(BASE_DIR)/baseline_pi $(OMP_DIR)/02_pi_openmp $(MPI_DIR)/03_coletivas_pi
 
-BASE_BIN = $(BASE_SRC:.c=)
-OMP_BIN  = $(OMP_SRC:.c=)
-MPI_BIN  = $(MPI_SRC:.c=)
+base: $(BASE_DIR)/baseline_pi
+openmp: $(OMP_DIR)/02_pi_openmp
+mpi: $(MPI_DIR)/03_coletivas_pi
 
-all: base openmp mpi
+$(BASE_DIR)/baseline_pi: $(BASE_DIR)/baseline_pi.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
 
-base: $(BASE_BIN)
-openmp: $(OMP_BIN)
-mpi: $(MPI_BIN)
+$(OMP_DIR)/02_pi_openmp: $(OMP_DIR)/02_pi_openmp.cpp
+	$(CXX) $(CXXFLAGS) $(OMPFLAG) -o $@ $< $(LDLIBS)
 
-$(BASE)/%: $(BASE)/%.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDLIBS)
-
-$(OMPDIR)/%: $(OMPDIR)/%.c
-	$(CC) $(CFLAGS) $(OMPFLAG) -o $@ $< $(LDLIBS)
-
-$(MPIDIR)/%: $(MPIDIR)/%.c
-	$(MPICC) $(CFLAGS) -o $@ $< $(LDLIBS)
+$(MPI_DIR)/03_coletivas_pi: $(MPI_DIR)/03_coletivas_pi.cpp
+	$(MPICXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
 
 clean:
-	rm -f $(BASE_BIN) $(OMP_BIN) $(MPI_BIN)
+	rm -f $(BASE_DIR)/baseline_pi $(OMP_DIR)/02_pi_openmp $(MPI_DIR)/03_coletivas_pi
 
 .PHONY: all base openmp mpi clean
